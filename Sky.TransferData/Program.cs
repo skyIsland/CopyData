@@ -50,8 +50,8 @@ namespace Sky.TransferData
         /// </summary>
         /// <param name="originConn">源数据库</param>
         /// <param name="desConn">目标数据库</param>
-        /// <param name="OpenTaskByDataCount">开启线程数</param>
-        private static  void CopyData(string originConn, string desConn, int OpenTaskByDataCount)
+        /// <param name="openTaskByDataCount">开启线程数</param>
+        private static  void CopyData(string originConn, string desConn, int openTaskByDataCount)
         {
             DAL dal = DAL.Create(originConn);
             List<IDataTable> tableList = dal.Tables;//获取源数据库的架构信息
@@ -64,19 +64,20 @@ namespace Sky.TransferData
             //首先拷贝数据库架构            
             DAL desDal = DAL.Create(desConn);           
             //要在配置文件中启用数据库架构才行 
-            desDal.Db.CreateMetaData().SetTables(Migration.Full);
+            desDal.Db.CreateMetaData().SetTables(new NegativeSetting(), tableList.ToArray());
             //然后依次拷贝每个表中的数据
             foreach (var item in tableList)
             {
+                (item.DisplayName + "开始转移").WriteInfo();
                 IEntityOperate Factory = dal.CreateOperate(item.Name);
                 //分页获取数据，并更新到新的数据库，通过更改数据库连接来完成
                 var allCount = (int)Factory.FindCount();
-                if (OpenTaskByDataCount < 0) OpenTaskByDataCount = GetDataRowsPerConvert(allCount);
-                int pages = (int)Math.Ceiling(((double)allCount / OpenTaskByDataCount));
+                if (openTaskByDataCount < 0) openTaskByDataCount = GetDataRowsPerConvert(allCount);
+                int pages = (int)Math.Ceiling(((double)allCount / openTaskByDataCount));
                 for (int i = 0; i < pages; i++)
                 {
                     Factory.ConnName = originConn;
-                    var modelList = Factory.FindAll(string.Empty, string.Empty, string.Empty, i * OpenTaskByDataCount, OpenTaskByDataCount);
+                    var modelList = Factory.FindAll(string.Empty, Factory.Unique, string.Empty, i * openTaskByDataCount, openTaskByDataCount);
                     Factory.ConnName = desConn;
                     modelList.Insert(true);
                 }
@@ -86,7 +87,7 @@ namespace Sky.TransferData
                 //int allCount = (int)factory.FindCount();
                 //var perCount = GetDataRowsPerConvert(allCount);
                 //var pages = (int)Math.Ceiling((double)allCount / perCount);
-                //if (OpenTaskByDataCount != 0)
+                //if (openTaskByDataCount != 0)
                 //{
                 //    Task[] tasks = new Task[pages];
                 //    for (int i = 0; i < pages; i++)
