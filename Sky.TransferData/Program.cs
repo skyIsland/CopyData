@@ -15,15 +15,14 @@ namespace Sky.TransferData
         public static Setting _Setting;
         static void Main(string[] args)
         {
-            #region 配置
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("*********初始化配置参数********");
+            #region 配置        
+            ("*********初始化配置参数********").WriteInfo();
             _Setting = Helper.GetSetting("Setting.json");
             #endregion
             #region 验证参数
-            if (_Setting.OriginConnStr.IsNullOrEmpty()|| _Setting.TargetConnStr.IsNullOrEmpty())
+            if (_Setting.OriginConnStr.IsNullOrEmpty() || _Setting.TargetConnStr.IsNullOrEmpty())
             {
-                Console.WriteLine("源数据库连接字符串或者目标数据库连接字符串不能为空!");               
+                ("源数据库连接字符串或者目标数据库连接字符串不能为空!").WriteError();
             }
             else
             {
@@ -36,15 +35,14 @@ namespace Sky.TransferData
                     sw.Start();
                     CopyData("originConnStr", "targetConnStr", _Setting.OpenTaskByDataCount);
                     sw.Stop();
-                    Console.WriteLine("数据库转移完成!耗时:" + sw.Elapsed);
+                    ("数据库转移完成!耗时:" + sw.Elapsed).WriteInfo();
 
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("发生错误:" + ex.Message);
+                    ("发生错误:" + ex.Message).WriteError();
                 }
             }
-           
             Console.ReadKey();
         }
         /// <summary>
@@ -59,7 +57,7 @@ namespace Sky.TransferData
             List<IDataTable> tableList = dal.Tables;//获取源数据库的架构信息
             if (tableList.Count == 0)
             {
-                Console.WriteLine("数据表数量为0,复制数据任务结束!");
+               ("数据表数量为0,复制数据任务结束!").WriteInfo();
                 return;
             }
             tableList.RemoveAll(t => t.IsView);//过滤掉视图
@@ -127,5 +125,34 @@ namespace Sky.TransferData
             if (allCount < 5000) return 500;
             return allCount < 50000 ? 1000 : 1500;
         }
+        
+    }
+
+    static class ConsoleExe
+    {
+        #region 控制台输出信息
+        /// <summary>
+        /// 输出错误信息
+        /// </summary>
+        /// <param name="str"></param>
+        public static void WriteError(this string str)
+        {
+            var oldColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(str);
+            Console.ForegroundColor = oldColor;
+        }
+        /// <summary>
+        /// 输出信息
+        /// </summary>
+        /// <param name="str"></param>
+        public static void WriteInfo(this string str)
+        {
+            var oldColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(str);
+            Console.ForegroundColor = oldColor;
+        }
+        #endregion
     }
 }
