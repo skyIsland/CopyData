@@ -15,11 +15,15 @@ namespace Sky.TransferData
         public static Setting _Setting;
         static void Main(string[] args)
         {
-            #region 配置        
+            #region 配置    
+            
             ("*********初始化配置参数********").WriteInfo();
             _Setting = Helper.GetSetting("Setting.json");
+
             #endregion
+
             #region 验证参数
+
             if (_Setting.OriginConnStr.IsNullOrEmpty() || _Setting.TargetConnStr.IsNullOrEmpty())
             {
                 ("源数据库连接字符串或者目标数据库连接字符串不能为空!").WriteError();
@@ -54,18 +58,25 @@ namespace Sky.TransferData
         private static  void CopyData(string originConn, string desConn, int openTaskByDataCount)
         {
             DAL dal = DAL.Create(originConn);
-            List<IDataTable> tableList = dal.Tables;//获取源数据库的架构信息
+
+            // 获取源数据库的架构信息
+            List<IDataTable> tableList = dal.Tables;
             if (tableList.Count == 0)
             {
                ("数据表数量为0,复制数据任务结束!").WriteInfo();
                 return;
             }
-            tableList.RemoveAll(t => t.IsView);//过滤掉视图
-            //首先拷贝数据库架构            
-            DAL desDal = DAL.Create(desConn);           
-            //要在配置文件中启用数据库架构才行 
+
+            // 过滤掉视图
+            tableList.RemoveAll(t => t.IsView);
+
+            // 首先拷贝数据库架构            
+            DAL desDal = DAL.Create(desConn);   
+            
+            // 要在配置文件中启用数据库架构才行 
             desDal.Db.CreateMetaData().SetTables(new NegativeSetting(), tableList.ToArray());
-            //然后依次拷贝每个表中的数据
+
+            // 然后依次拷贝每个表中的数据
             foreach (var item in tableList)
             {
                 (item.DisplayName + "开始转移").WriteInfo();
