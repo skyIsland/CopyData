@@ -5,3 +5,4 @@ Log
 **/obj
 **/Log
 !*.dll
+/Sky.TransferData/Setting1 - 副本.json

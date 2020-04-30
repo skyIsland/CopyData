@@ -37,7 +37,7 @@ namespace Sky.TransferData
                 {
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
-                    CopyData("originConnStr", "targetConnStr", _Setting.OpenTaskByDataCount);
+                    CopyData("originConnStr", "targetConnStr", _Setting.OpenTaskByDataCount,_Setting.TableNameList);
                     sw.Stop();
                     ("数据库转移完成!耗时:" + sw.Elapsed).WriteInfo();
 
@@ -55,7 +55,7 @@ namespace Sky.TransferData
         /// <param name="originConn">源数据库</param>
         /// <param name="desConn">目标数据库</param>
         /// <param name="openTaskByDataCount">开启线程数</param>
-        private static  void CopyData(string originConn, string desConn, int openTaskByDataCount)
+        private static  void CopyData(string originConn, string desConn, int openTaskByDataCount,List<string> tableNameList)
         {
             DAL dal = DAL.Create(originConn);
 
@@ -70,6 +70,16 @@ namespace Sky.TransferData
             // 过滤掉视图
             tableList.RemoveAll(t => t.IsView);
 
+            if(tableNameList != null && tableNameList.Any())
+            {
+                tableList = tableList.Where(p => tableNameList.Contains(p.TableName)).ToList();
+            }
+            else
+            {
+                // 必须指定表
+                return;
+            }
+
             // 首先拷贝数据库架构            
             DAL desDal = DAL.Create(desConn);   
             
@@ -81,7 +91,10 @@ namespace Sky.TransferData
             {
                 (item.DisplayName + "开始转移").WriteInfo();
                 IEntityOperate Factory = dal.CreateOperate(item.Name);
-                //分页获取数据，并更新到新的数据库，通过更改数据库连接来完成
+
+                Factory.Session.Truncate();
+
+                // 分页获取数据，并更新到新的数据库，通过更改数据库连接来完成
                 var allCount = (int)Factory.FindCount();
                 if (openTaskByDataCount < 0) openTaskByDataCount = GetDataRowsPerConvert(allCount);
                 int pages = (int)Math.Ceiling(((double)allCount / openTaskByDataCount));
