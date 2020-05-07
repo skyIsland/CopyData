@@ -22,17 +22,15 @@ namespace Sky.TransferData
 
             #endregion
 
-            #region 验证参数
-
             if (_Setting.OriginConnStr.IsNullOrEmpty() || _Setting.TargetConnStr.IsNullOrEmpty())
             {
                 ("源数据库连接字符串或者目标数据库连接字符串不能为空!").WriteError();
             }
             else
             {
-                DAL.AddConnStr("originConnStr", _Setting.OriginConnStr, null, "mssql");
-                DAL.AddConnStr("targetConnStr", _Setting.TargetConnStr, null, "mssql");
-                #endregion
+                DAL.AddConnStr("originConnStr", _Setting.OriginConnStr, null, "oracle");
+                DAL.AddConnStr("targetConnStr", _Setting.TargetConnStr, null, "oracle");
+              
                 try
                 {
                     Stopwatch sw = new Stopwatch();
@@ -84,13 +82,15 @@ namespace Sky.TransferData
             DAL desDal = DAL.Create(desConn);   
             
             // 要在配置文件中启用数据库架构才行 
-            desDal.Db.CreateMetaData().SetTables(new NegativeSetting(), tableList.ToArray());
+            desDal.Db.CreateMetaData().SetTables(new Migration(), tableList.ToArray());
 
             // 然后依次拷贝每个表中的数据
             foreach (var item in tableList)
             {
                 (item.DisplayName + "开始转移").WriteInfo();
-                IEntityOperate Factory = dal.CreateOperate(item.Name);
+
+                var Factory = EntityFactory.CreateOperate(item.GetType());
+                //IEntityOperate Factory = dal.CreateOperate(item.Name);
 
                 Factory.Session.Truncate();
 
