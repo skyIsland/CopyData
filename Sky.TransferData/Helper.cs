@@ -39,6 +39,7 @@ namespace Sky.TransferData
             return Decode<Setting>(result);
         }
         #endregion
+
         #region JsonHelper
         /// <summary>
         /// json反序列化

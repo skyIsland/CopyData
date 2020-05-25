@@ -16,7 +16,7 @@ namespace Sky.TransferData
         static void Main(string[] args)
         {
             #region 配置    
-            
+
             ("*********初始化配置参数********").WriteInfo();
             _Setting = Helper.GetSetting("Setting.json");
 
@@ -28,14 +28,14 @@ namespace Sky.TransferData
             }
             else
             {
-                DAL.AddConnStr("originConnStr", _Setting.OriginConnStr, null, "oracle");
-                DAL.AddConnStr("targetConnStr", _Setting.TargetConnStr, null, "oracle");
-              
+                DAL.AddConnStr("originConnStr", _Setting.OriginConnStr, null, _Setting.OriginDbType);
+                DAL.AddConnStr("targetConnStr", _Setting.TargetConnStr, null, _Setting.TargetDbType);
+
                 try
                 {
                     Stopwatch sw = new Stopwatch();
                     sw.Start();
-                    CopyData("originConnStr", "targetConnStr", _Setting.OpenTaskByDataCount,_Setting.TableNameList);
+                    CopyData("originConnStr", "targetConnStr", _Setting.OpenTaskByDataCount, _Setting.TableNameList);
                     sw.Stop();
                     ("数据库转移完成!耗时:" + sw.Elapsed).WriteInfo();
 
@@ -53,7 +53,7 @@ namespace Sky.TransferData
         /// <param name="originConn">源数据库</param>
         /// <param name="desConn">目标数据库</param>
         /// <param name="openTaskByDataCount">开启线程数</param>
-        private static  void CopyData(string originConn, string desConn, int openTaskByDataCount,List<string> tableNameList)
+        private static void CopyData(string originConn, string desConn, int openTaskByDataCount, List<string> tableNameList)
         {
             DAL dal = DAL.Create(originConn);
 
@@ -61,14 +61,14 @@ namespace Sky.TransferData
             List<IDataTable> tableList = dal.Tables;
             if (tableList.Count == 0)
             {
-               ("数据表数量为0,复制数据任务结束!").WriteInfo();
+                ("数据表数量为0,复制数据任务结束!").WriteInfo();
                 return;
             }
 
             // 过滤掉视图
             tableList.RemoveAll(t => t.IsView);
 
-            if(tableNameList != null && tableNameList.Any())
+            if (tableNameList != null && tableNameList.Any())
             {
                 tableList = tableList.Where(p => tableNameList.Contains(p.TableName)).ToList();
             }
@@ -79,8 +79,13 @@ namespace Sky.TransferData
             }
 
             // 首先拷贝数据库架构            
-            DAL desDal = DAL.Create(desConn);   
-            
+            DAL desDal = DAL.Create(desConn);
+
+            //var tt = tableList.FirstOrDefault();
+            //var pp = tt.PrimaryKeys;
+            //dal.Backup(tableList.FirstOrDefault());
+            //return;
+
             // 要在配置文件中启用数据库架构才行 
             desDal.Db.CreateMetaData().SetTables(new Migration(), tableList.ToArray());
 
@@ -150,7 +155,7 @@ namespace Sky.TransferData
             if (allCount < 5000) return 500;
             return allCount < 50000 ? 1000 : 1500;
         }
-        
+
     }
 
     static class ConsoleExe
